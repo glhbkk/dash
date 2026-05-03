@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>대시보드</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: #000; overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Helvetica Neue', sans-serif; color: #fff; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    height: 100vh; width: 100vw;
+    padding: 26px 24px;
+    gap: 0;
+  }
+
+  .left {
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding-right: 24px;
+    border-right: 1px solid rgba(255,255,255,0.09);
+  }
+  /* ── 시계 ── */
+  .clock-wrap {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex: 1; gap: 8px;
+  }
+  .led-row {
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .led-ampm {
+    font-size: clamp(12px,1.5vw,16px);
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 2px;
+    font-weight: 300;
+  }
+  .led-digits {
+    font-size: clamp(80px,17vw,172px);
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -2px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+  }
+  .led-sep {
+    font-size: clamp(60px,13vw,132px);
+    font-weight: 400;
+    color: rgba(255,255,255,0.25);
+    line-height: 1;
+    margin: 0 2px;
+    animation: sepBlink 1s step-end infinite;
+    align-self: center;
+  }
+  @keyframes sepBlink {
+    0%,100% { opacity:1; }
+    50%      { opacity:0.1; }
+  }
+  .clock-date-sub {
+    font-size: clamp(11px,1.3vw,14px);
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 4px; font-weight: 300; text-align: center;
+  }
+  .ampm { display: none; }
+
+  .bottom-block { padding-top: 10px; }
+  .weather-dust-row { display: flex; align-items: flex-end; gap: 18px; margin-bottom: 6px; }
+  .today-weather { display:flex; align-items:center; gap:10px; }
+  .w-icon { font-size: clamp(36px,5.5vw,54px); }
+  .w-temp { font-size: clamp(38px,7vw,70px); font-weight:200; line-height:1; }
+  .w-unit { font-size:0.4em; vertical-align:super; color:rgba(255,255,255,0.5); }
+  .w-meta { display:flex; gap:10px; margin-top:3px; }
+  .w-desc { font-size:clamp(14px,2vw,18px); color:rgba(255,255,255,0.5); }
+  .w-feel { font-size:clamp(13px,1.8vw,16px); color:rgba(255,255,255,0.3); }
+
+  .dust-inline { display:flex; gap:12px; align-items:flex-end; padding-left:16px; border-left:1px solid rgba(255,255,255,0.1); }
+  .dust-item { display:flex; flex-direction:column; gap:2px; align-items:center; text-align:center; }
+  .dust-label { font-size:clamp(10px,1.2vw,13px); color:rgba(255,255,255,0.28); letter-spacing:1.5px; text-transform:uppercase; }
+  .dust-val { font-size:clamp(22px,3.2vw,34px); font-weight:300; }
+  .dust-grade { font-size:clamp(11px,1.3vw,14px); padding:3px 0; border-radius:20px; font-weight:500; display:block; margin-top:2px; width:60px; text-align:center; }
+  .grade-good     { background:rgba(72,199,142,0.18); color:#48c78e; }
+  .grade-normal   { background:rgba(78,160,255,0.18); color:#4ea0ff; }
+  .grade-bad      { background:rgba(255,180,50,0.18);  color:#ffb432; }
+  .grade-very-bad { background:rgba(255,80,80,0.18);   color:#ff5050; }
+  .dust-divider-v { width:1px; height:50px; background:rgba(255,255,255,0.1); }
+
+  .weekly { display:flex; gap:5px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08); }
+  .day-card { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 3px; border-radius:10px; background:rgba(255,255,255,0.05); }
+  .day-card.today-card { background:rgba(255,255,255,0.12); }
+  .dc-day { font-size:clamp(9px,1.1vw,11px); color:rgba(255,255,255,0.4); }
+  .dc-day.sun { color:rgba(220,80,80,0.7); }
+  .dc-day.sat { color:rgba(100,160,255,0.7); }
+  .dc-icon { font-size:clamp(14px,2vw,19px); }
+  .dc-hi { font-size:clamp(10px,1.3vw,13px); color:rgba(255,255,255,0.85); font-weight:500; }
+  .dc-lo { font-size:clamp(9px,1.1vw,11px); color:rgba(255,255,255,0.32); }
+  .location-row { font-size:clamp(9px,1.1vw,10px); color:rgba(255,255,255,0.2); margin-top:5px; }
+  .map-btn {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 10px; padding: 9px 12px;
+    background: rgba(255,255,255,0.05);
+    border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+  .map-btn:hover { background: rgba(255,255,255,0.1); }
+  .map-btn-icon { font-size: clamp(14px,1.8vw,18px); flex-shrink:0; }
+  .map-btn-text { display:flex; flex-direction:column; gap:1px; flex:1; min-width:0; }
+  .map-btn-label { font-size:clamp(9px,1.1vw,12px); color:rgba(255,255,255,0.65); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .map-btn-sub { font-size:clamp(8px,0.9vw,10px); color:rgba(255,255,255,0.25); }
+  .map-btn-arrow { font-size:clamp(14px,1.8vw,18px); color:rgba(255,255,255,0.25); flex-shrink:0; }
+
+  /* 달력 */
+  .right { display:flex; flex-direction:column; padding-left:24px; justify-content: center; }
+  .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .cal-nav { background:none; border:none; color:rgba(255,255,255,0.45); font-size:clamp(18px,2.5vw,26px); cursor:pointer; padding:4px 8px; border-radius:6px; line-height:1; }
+  .cal-nav:hover { color:#fff; background:rgba(255,255,255,0.1); }
+  .cal-month-title { font-size:clamp(13px,1.9vw,18px); font-weight:400; color:rgba(255,255,255,0.85); }
+  .cal-today-btn { background:none; border:1px solid rgba(255,255,255,0.18); color:rgba(255,255,255,0.4); font-size:clamp(9px,1vw,11px); cursor:pointer; padding:2px 8px; border-radius:10px; }
+  .cal-today-btn:hover { color:#fff; border-color:rgba(255,255,255,0.5); }
+
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; text-align:center; }
+  .cal-hd { font-size:clamp(11px,1.3vw,14px); color:rgba(255,255,255,0.28); padding-bottom:6px; }
+  .cal-hd.sun { color:rgba(220,80,80,0.5); }
+  .cal-hd.sat { color:rgba(100,160,255,0.5); }
+
+  .cal-d {
+    font-size:clamp(18px,2.8vw,28px); color:rgba(255,255,255,0.75);
+    aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-radius:7px; position:relative; cursor:default; gap:1px;
+  }
+  .cal-d.other { color:rgba(255,255,255,0.12); }
+  .cal-d.other .shift-tag { display:none; }
+  .cal-d.sun   { color:rgba(220,80,80,0.75); }
+  .cal-d.sat   { color:rgba(100,160,255,0.75); }
+  .cal-d.holiday { color:rgba(220,80,80,0.85) !important; }
+  .cal-d.today { background:none; color:#fff !important; font-weight:700; border-radius:7px; }
+  .cal-d.today.holiday { background:none; color:#fff !important; border-radius:7px; }
+  .cal-d.today .num-circle { background:rgba(255,255,255,0.55); border-radius:50%; width:1.6em; height:1.6em; display:flex; align-items:center; justify-content:center; }
+  .cal-d.today.holiday .num-circle { background:rgba(200,50,50,0.65); }
+  .cal-d.today .shift-tag { color:rgba(255,255,255,0.7) !important; background:rgba(255,255,255,0.1) !important; }
+  .cal-d.today.holiday .shift-tag { color:rgba(255,220,220,0.9) !important; background:rgba(255,255,255,0.15) !important; }
+
+  .holiday-name {
+    font-size:clamp(7px,0.85vw,9px); color:rgba(220,80,80,0.8);
+    line-height:1; text-align:center; white-space:nowrap; overflow:hidden; max-width:100%;
+  }
+  .cal-d.today .holiday-name { color:rgba(255,255,255,0.7); }
+  .cal-d.today.holiday .holiday-name { color:rgba(255,210,210,0.9); }
+
+  /* 근무 태그 */
+  .shift-tag {
+    font-size: clamp(8px,1vw,11px);
+    font-weight: 600;
+    padding: 1px 4px;
+    border-radius: 3px;
+    line-height: 1.4;
+    letter-spacing: 0;
+  }
+  .shift-주1 { background:rgba(120,210,80,0.1); color:rgba(140,210,80,0.6); }
+  .shift-주2 { background:rgba(120,210,80,0.1); color:rgba(140,210,80,0.6); }
+  .shift-야1 { background:rgba(255,235,80,0.1); color:rgba(220,200,60,0.6); }
+  .shift-야2 { background:rgba(255,235,80,0.1); color:rgba(220,200,60,0.6); }
+  .shift-비  { background:rgba(255,90,90,0.1); color:rgba(255,100,100,0.55); }
+  .shift-휴  { background:rgba(255,90,90,0.1); color:rgba(255,100,100,0.55); }
+
+  /* 근무 범례 */
+  .shift-legend {
+    display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;
+  }
+  .legend-item { display:flex; align-items:center; gap:3px; font-size:clamp(8px,0.9vw,10px); color:rgba(255,255,255,0.4); }
+  .legend-dot { width:7px; height:7px; border-radius:2px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- 왼쪽 -->
+  <div class="left">
+    <div class="clock-wrap">
+      <div class="led-row">
+        <div class="led-ampm" id="ampm">PM</div>
+        <div class="led-digits" id="led-h">12</div>
+        <div class="led-sep">:</div>
+        <div class="led-digits" id="led-m">00</div>
+      </div>
+      <div class="clock-date-sub" id="clock-date-sub"></div>
+    </div>
+    <div class="bottom-block">
+      <div class="weather-dust-row">
+        <div>
+          <div class="today-weather">
+            <span class="w-icon" id="w-icon">☀️</span>
+            <span class="w-temp" id="w-temp">--<span class="w-unit">°C</span></span>
+          </div>
+          <div class="w-meta">
+            <span class="w-desc" id="w-desc">로딩 중</span>
+            <span class="w-feel" id="w-feel"></span>
+          </div>
+        </div>
+        <div class="dust-inline">
+          <div class="dust-item">
+            <div class="dust-label">미세먼지</div>
+            <div class="dust-val" id="pm10-val">--</div>
+            <div class="dust-grade" id="pm10-grade">--</div>
+          </div>
+          <div class="dust-divider-v"></div>
+          <div class="dust-item">
+            <div class="dust-label">초미세먼지</div>
+            <div class="dust-val" id="pm25-val">--</div>
+            <div class="dust-grade" id="pm25-grade">--</div>
+          </div>
+        </div>
+      </div>
+      <div class="weekly" id="weekly"></div>
+      <div class="location-row">인천광역시 · <span id="w-updated"></span></div>
+      <a class="map-btn" href="https://map.naver.com/p/directions/14097300,4512100,%EC%B2%AD%EB%9D%BC%EC%B4%88%EB%93%B1%ED%95%99%EA%B5%90,,/14070100,4503600,%EC%9D%B8%EC%B2%9C%EA%B3%B5%ED%95%AD+2%ED%84%B0%EB%AF%B8%EB%84%90+%EB%8B%A8%EA%B8%B0%EC%A3%BC%EC%B0%A8%EC%9E%A5,,/car" target="_blank">
+        <span class="map-btn-icon">🚗</span>
+        <span class="map-btn-text">
+          <span class="map-btn-label">청라초 → 인천공항 2터미널 단기주차장</span>
+          <span class="map-btn-sub">탭하면 네이버지도에서 실시간 소요시간 확인</span>
+        </span>
+        <span class="map-btn-arrow">›</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- 오른쪽: 달력 -->
+  <div class="right">
+    <div class="cal-header">
+      <button class="cal-nav" id="btn-prev">&#8249;</button>
+      <div class="cal-month-title" id="cal-title"></div>
+      <button class="cal-nav" id="btn-next">&#8250;</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px;">
+      <div class="shift-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(140,210,80,0.6);"></div>주간</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(220,200,60,0.6);"></div>야간</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(255,100,100,0.55);"></div>비번/휴무</div>
+      </div>
+      <button class="cal-today-btn" id="btn-today">오늘</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── LED 시계 ── */
+function tick() {
+  const n = new Date();
+  const h = n.getHours(), m = n.getMinutes();
+  const h12 = h % 12 || 12;
+  document.getElementById('ampm').textContent = h < 12 ? 'AM' : 'PM';
+  document.getElementById('led-h').textContent = String(h12).padStart(2,'0');
+  document.getElementById('led-m').textContent = String(m).padStart(2,'0');
+  const days=['일','월','화','수','목','금','토'];
+  const subEl = document.getElementById('clock-date-sub');
+  if(subEl) subEl.textContent = n.getFullYear()+'.'+String(n.getMonth()+1).padStart(2,'0')+'.'+String(n.getDate()).padStart(2,'0')+' '+days[n.getDay()]+'요일';
+  document.getElementById('w-updated').textContent =
+    (n.getMonth()+1)+'-'+String(n.getDate()).padStart(2,'0')+' '+
+    String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+
+/* ── 날씨 ── */
+const W_ICON={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
+const W_DESC={0:'맑음',1:'대체로 맑음',2:'구름 조금',3:'흐림',45:'안개',48:'안개',51:'이슬비',53:'이슬비',55:'이슬비',61:'비',63:'비',65:'강한 비',71:'눈',73:'눈',75:'강한 눈',80:'소나기',81:'소나기',82:'강한 소나기',95:'뇌우',96:'뇌우',99:'뇌우'};
+const DAY_KO=['일','월','화','수','목','금','토'];
+
+async function fetchWeather() {
+  try {
+    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=37.4563&longitude=126.7052&current=temperature_2m,apparent_temperature,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FSeoul&forecast_days=7');
+    const d = await r.json(); const c = d.current;
+    document.getElementById('w-icon').textContent = W_ICON[c.weather_code]||'🌡️';
+    document.getElementById('w-temp').innerHTML = Math.round(c.temperature_2m)+'<span class="w-unit">°C</span>';
+    document.getElementById('w-desc').textContent = W_DESC[c.weather_code]||'';
+    document.getElementById('w-feel').textContent = '체감 '+Math.round(c.apparent_temperature)+'°';
+    const weekly = document.getElementById('weekly'); weekly.innerHTML='';
+    d.daily.time.forEach((t,i)=>{
+      const dow=new Date(t).getDay();
+      const card=document.createElement('div');
+      card.className='day-card'+(i===0?' today-card':'');
+      card.innerHTML=`<div class="dc-day ${dow===0?'sun':dow===6?'sat':''}">${i===0?'오늘':DAY_KO[dow]}</div><div class="dc-icon">${W_ICON[d.daily.weather_code[i]]||'🌡️'}</div><div class="dc-hi">${Math.round(d.daily.temperature_2m_max[i])}°</div><div class="dc-lo">${Math.round(d.daily.temperature_2m_min[i])}°</div>`;
+      weekly.appendChild(card);
+    });
+  } catch(e) { document.getElementById('w-desc').textContent='연결 오류'; }
+}
+
+/* ── 미세먼지 ── */
+function gradeInfo(val,type){
+  const [g,n,b]=type==='pm10'?[30,80,150]:[15,35,75];
+  if(val<g)return['좋음','grade-good'];
+  if(val<n)return['보통','grade-normal'];
+  if(val<b)return['나쁨','grade-bad'];
+  return['매우나쁨','grade-very-bad'];
+}
+async function fetchDust(){
+  try{
+    const r=await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=37.4563&longitude=126.7052&current=pm10,pm2_5&timezone=Asia%2FSeoul');
+    const d=await r.json(); const c=d.current;
+    [['pm10',c.pm10,'pm10'],['pm25',c.pm2_5,'pm25']].forEach(([k,v,t])=>{
+      const val=Math.round(v);
+      document.getElementById(k+'-val').textContent=val;
+      const [label,cls]=gradeInfo(val,t);
+      const el=document.getElementById(k+'-grade');
+      el.textContent=label; el.className='dust-grade '+cls;
+    });
+  }catch(e){}
+}
+
+/* ── 공휴일 ── */
+const HOLIDAYS = {
+  '2025-01-01':'신정','2025-01-28':'설날연휴','2025-01-29':'설날','2025-01-30':'설날연휴',
+  '2025-03-01':'삼일절','2025-05-05':'어린이날','2025-05-06':'대체공휴일','2025-05-15':'부처님오신날',
+  '2025-06-06':'현충일','2025-08-15':'광복절',
+  '2025-10-03':'개천절','2025-10-05':'추석연휴','2025-10-06':'추석','2025-10-07':'추석연휴','2025-10-08':'대체공휴일',
+  '2025-10-09':'한글날','2025-12-25':'크리스마스',
+  '2026-01-01':'신정','2026-02-17':'설날연휴','2026-02-18':'설날','2026-02-19':'설날연휴',
+  '2026-03-01':'삼일절','2026-05-05':'어린이날','2026-05-24':'부처님오신날',
+  '2026-06-06':'현충일','2026-08-15':'광복절',
+  '2026-09-24':'추석연휴','2026-09-25':'추석','2026-09-26':'추석연휴',
+  '2026-10-03':'개천절','2026-10-09':'한글날','2026-12-25':'크리스마스',
+};
+function hKey(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+
+/* ── 근무 패턴: 주주야야비휴 (6일 반복) ── */
+// 기준: 2026-04-11 = 야2 = index 3
+const SHIFT_PATTERN = ['주1','주2','야1','야2','비','휴'];
+const REF_DATE = new Date(2026, 3, 11); // 4월 11일
+const REF_IDX  = 3; // 야2
+
+function getShift(year, month, day) {
+  const d = new Date(year, month, day);
+  const diffDays = Math.round((d - REF_DATE) / 86400000);
+  const idx = ((REF_IDX + diffDays) % 6 + 6) % 6;
+  return SHIFT_PATTERN[idx];
+}
+
+/* ── 달력 ── */
+const MONTHS_KO=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const realNow = new Date();
+let calYear  = realNow.getFullYear();
+let calMonth = realNow.getMonth();
+
+function buildCalendar(){
+  const todayY=realNow.getFullYear(), todayMo=realNow.getMonth(), todayD=realNow.getDate();
+  document.getElementById('cal-title').textContent = calYear+'년 '+MONTHS_KO[calMonth];
+  const grid=document.getElementById('cal-grid'); grid.innerHTML='';
+
+  ['일','월','화','수','목','금','토'].forEach((d,i)=>{
+    const h=document.createElement('div');
+    h.className='cal-hd'+(i===0?' sun':i===6?' sat':'');
+    h.textContent=d; grid.appendChild(h);
+  });
+
+  const first=new Date(calYear,calMonth,1).getDay();
+  const dim=new Date(calYear,calMonth+1,0).getDate();
+  const prev=new Date(calYear,calMonth,0).getDate();
+
+  // 이전달 빈칸
+  for(let i=first-1;i>=0;i--){
+    const e=document.createElement('div'); e.className='cal-d other';
+    e.textContent=prev-i; grid.appendChild(e);
+  }
+
+  for(let d=1;d<=dim;d++){
+    const dow=new Date(calYear,calMonth,d).getDay();
+    const key=hKey(calYear,calMonth,d);
+    const hname=HOLIDAYS[key];
+    const shift=getShift(calYear,calMonth,d);
+    const isToday=(calYear===todayY && calMonth===todayMo && d===todayD);
+
+    const e=document.createElement('div');
+    let cls='cal-d';
+    if(dow===0) cls+=' sun';
+    else if(dow===6) cls+=' sat';
+    if(hname) cls+=' holiday';
+    if(isToday) cls+=' today';
+    e.className=cls;
+
+    // 날짜 숫자
+    const numSpan=document.createElement('span');
+    numSpan.className='num-circle';
+    numSpan.textContent=d;
+    e.appendChild(numSpan);
+
+    // 공휴일 이름
+    if(hname){
+      const nm=document.createElement('div');
+      nm.className='holiday-name';
+      nm.textContent=hname.length>4?hname.slice(0,4)+'…':hname;
+      e.appendChild(nm);
+    }
+
+    // 근무 태그
+    const tag=document.createElement('div');
+    tag.className='shift-tag shift-'+shift;
+    // 주1→주, 주2→주, 야1→야, 야2→야 로 짧게
+    const shortLabel={'주1':'주','주2':'주','야1':'야','야2':'야','비':'비','휴':'휴'};
+    tag.textContent=shortLabel[shift];
+    e.appendChild(tag);
+
+    grid.appendChild(e);
+  }
+
+  // 다음달 빈칸
+  const total=first+dim, rem=(7-total%7)%7;
+  for(let i=1;i<=rem;i++){
+    const e=document.createElement('div'); e.className='cal-d other';
+    e.textContent=i; grid.appendChild(e);
+  }
+}
+
+document.getElementById('btn-prev').addEventListener('click',()=>{
+  calMonth--; if(calMonth<0){calMonth=11;calYear--;} buildCalendar();
+});
+document.getElementById('btn-next').addEventListener('click',()=>{
+  calMonth++; if(calMonth>11){calMonth=0;calYear++;} buildCalendar();
+});
+document.getElementById('btn-today').addEventListener('click',()=>{
+  calYear=realNow.getFullYear(); calMonth=realNow.getMonth(); buildCalendar();
+});
+
+
+
+async function keepAwake(){
+  if('wakeLock' in navigator){try{let wl=await navigator.wakeLock.request('screen');document.addEventListener('visibilitychange',async()=>{if(document.visibilityState==='visible')wl=await navigator.wakeLock.request('screen');});}catch(e){}}
+}
+
+tick(); buildCalendar(); fetchWeather(); fetchDust(); keepAwake();
+setInterval(tick,1000);
+setInterval(()=>{fetchWeather();fetchDust();},10*60*1000);
+</script>
+</body>
+</html>

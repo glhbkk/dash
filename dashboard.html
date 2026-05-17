@@ -339,12 +339,11 @@ function getShift(year, month, day) {
 
 /* ── 달력 ── */
 const MONTHS_KO=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-const realNow = new Date();
-let calYear  = realNow.getFullYear();
-let calMonth = realNow.getMonth();
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth();
 
 function buildCalendar(){
-  const todayY=realNow.getFullYear(), todayMo=realNow.getMonth(), todayD=realNow.getDate();
+  const _now=new Date(); const todayY=_now.getFullYear(), todayMo=_now.getMonth(), todayD=_now.getDate();
   document.getElementById('cal-title').textContent = calYear+'년 '+MONTHS_KO[calMonth];
   const grid=document.getElementById('cal-grid'); grid.innerHTML='';
 
@@ -419,7 +418,7 @@ document.getElementById('btn-next').addEventListener('click',()=>{
   calMonth++; if(calMonth>11){calMonth=0;calYear++;} buildCalendar();
 });
 document.getElementById('btn-today').addEventListener('click',()=>{
-  calYear=realNow.getFullYear(); calMonth=realNow.getMonth(); buildCalendar();
+  calYear=new Date().getFullYear(); calMonth=new Date().getMonth(); buildCalendar();
 });
 
 
@@ -429,6 +428,19 @@ async function keepAwake(){
 }
 
 tick(); buildCalendar(); fetchWeather(); fetchDust(); keepAwake();
+
+/* ── 자정에 달력 자동 갱신 ── */
+function scheduleCalendarRefresh() {
+  const now = new Date();
+  const msUntilMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1, 0, 0, 5) - now;
+  setTimeout(() => {
+    calYear  = new Date().getFullYear();
+    calMonth = new Date().getMonth();
+    buildCalendar();
+    scheduleCalendarRefresh(); // 다음 자정 예약
+  }, msUntilMidnight);
+}
+scheduleCalendarRefresh();
 setInterval(tick,1000);
 setInterval(()=>{fetchWeather();fetchDust();},10*60*1000);
 </script>

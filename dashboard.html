@@ -96,22 +96,6 @@
   .dc-hi { font-size:clamp(10px,1.3vw,13px); color:rgba(255,255,255,0.85); font-weight:500; }
   .dc-lo { font-size:clamp(9px,1.1vw,11px); color:rgba(255,255,255,0.32); }
   .location-row { font-size:clamp(9px,1.1vw,10px); color:rgba(255,255,255,0.2); margin-top:5px; }
-  .map-btn {
-    display: flex; align-items: center; gap: 10px;
-    margin-top: 10px; padding: 9px 12px;
-    background: rgba(255,255,255,0.05);
-    border: 0.5px solid rgba(255,255,255,0.12);
-    border-radius: 10px;
-    text-decoration: none;
-    transition: background 0.2s;
-  }
-  .map-btn:hover { background: rgba(255,255,255,0.1); }
-  .map-btn-icon { font-size: clamp(14px,1.8vw,18px); flex-shrink:0; }
-  .map-btn-text { display:flex; flex-direction:column; gap:1px; flex:1; min-width:0; }
-  .map-btn-label { font-size:clamp(9px,1.1vw,12px); color:rgba(255,255,255,0.65); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .map-btn-sub { font-size:clamp(8px,0.9vw,10px); color:rgba(255,255,255,0.25); }
-  .map-btn-arrow { font-size:clamp(14px,1.8vw,18px); color:rgba(255,255,255,0.25); flex-shrink:0; }
-
   /* 달력 */
   .right { display:flex; flex-direction:column; padding-left:24px; justify-content: center; }
   .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
@@ -172,6 +156,53 @@
   }
   .legend-item { display:flex; align-items:center; gap:3px; font-size:clamp(8px,0.9vw,10px); color:rgba(255,255,255,0.4); }
   .legend-dot { width:7px; height:7px; border-radius:2px; }
+
+  /* ── 버스 도착 ── */
+  .bus-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .bus-stop {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 7px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .bus-stop-name {
+    font-size: clamp(8px,0.9vw,10px);
+    color: rgba(255,255,255,0.3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bus-route {
+    font-size: clamp(10px,1.2vw,13px);
+    color: rgba(100,180,255,0.85);
+    font-weight: 600;
+  }
+  .bus-arrival-times {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .bus-time {
+    font-size: clamp(11px,1.4vw,15px);
+    color: rgba(255,255,255,0.8);
+    font-weight: 300;
+  }
+  .bus-time .min { font-weight:600; color:rgba(255,255,255,0.95); }
+  .bus-time .stops { font-size:0.78em; color:rgba(255,255,255,0.35); margin-left:3px; }
+  .bus-loading { color:rgba(255,255,255,0.2); font-size:clamp(9px,1.1vw,12px); }
+  .bus-error { color:rgba(255,100,100,0.5); font-size:clamp(9px,1vw,11px); }
+  .bus-updated { font-size:clamp(7px,0.8vw,9px); color:rgba(255,255,255,0.18); text-align:right; }
 </style>
 </head>
 <body>
@@ -216,14 +247,25 @@
       </div>
       <div class="weekly" id="weekly"></div>
       <div class="location-row">인천광역시 · <span id="w-updated"></span></div>
-      <a class="map-btn" href="https://map.naver.com/p/directions/14097300,4512100,%EC%B2%AD%EB%9D%BC%EC%B4%88%EB%93%B1%ED%95%99%EA%B5%90,,/14070100,4503600,%EC%9D%B8%EC%B2%9C%EA%B3%B5%ED%95%AD+2%ED%84%B0%EB%AF%B8%EB%84%90+%EB%8B%A8%EA%B8%B0%EC%A3%BC%EC%B0%A8%EC%9E%A5,,/car" target="_blank">
-        <span class="map-btn-icon">🚗</span>
-        <span class="map-btn-text">
-          <span class="map-btn-label">청라초 → 인천공항 2터미널 단기주차장</span>
-          <span class="map-btn-sub">탭하면 네이버지도에서 실시간 소요시간 확인</span>
-        </span>
-        <span class="map-btn-arrow">›</span>
-      </a>
+      <!-- 버스 도착 -->
+      <div class="bus-section" id="bus-section">
+        <div class="bus-stop" id="bus-stop-0">
+          <div class="bus-stop-name">웰카운티1차</div>
+          <div class="bus-route">2-1번</div>
+          <div class="bus-arrival-times" id="bus-arr-0"><div class="bus-loading">로딩 중…</div></div>
+        </div>
+        <div class="bus-stop" id="bus-stop-1">
+          <div class="bus-stop-name">청라초등학교</div>
+          <div class="bus-route">702번</div>
+          <div class="bus-arrival-times" id="bus-arr-1"><div class="bus-loading">로딩 중…</div></div>
+        </div>
+        <div class="bus-stop" id="bus-stop-2">
+          <div class="bus-stop-name">호반베르디움</div>
+          <div class="bus-route">43번</div>
+          <div class="bus-arrival-times" id="bus-arr-2"><div class="bus-loading">로딩 중…</div></div>
+        </div>
+      </div>
+      <div class="bus-updated" id="bus-updated"></div>
     </div>
   </div>
 
@@ -423,11 +465,72 @@ document.getElementById('btn-today').addEventListener('click',()=>{
 
 
 
+/* ── 버스 도착 ── */
+const BUS_API_KEY = '1ea48ee73f646fa9592a9e40e24ab4238c860c7cabbd9f831b72075dce4a188a';
+const BUS_STOPS = [
+  { stId: '42764', routeNo: '2-1', elId: 'bus-arr-0' },
+  { stId: '89282', routeNo: '702', elId: 'bus-arr-1' },
+  { stId: '42855', routeNo: '43',  elId: 'bus-arr-2' },
+];
+
+function secToText(sec) {
+  if (sec <= 0) return '<span class="min">곧 도착</span>';
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  if (m === 0) return `<span class="min">${s}초</span>`;
+  return `<span class="min">${m}분</span>${s > 0 ? ' '+s+'초' : ''}`;
+}
+
+async function fetchBusStop(stop) {
+  const el = document.getElementById(stop.elId);
+  try {
+    const url = `https://apis.data.go.kr/6280000/busArrivalService/getAllRouteBusArrivalList`
+      + `?serviceKey=${BUS_API_KEY}&bstopId=${stop.stId}&numOfRows=10&pageNo=1&_type=json`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    const items = data?.response?.body?.items?.item;
+    if (!items) { el.innerHTML = '<div class="bus-loading">운행 없음</div>'; return; }
+
+    const list = Array.isArray(items) ? items : [items];
+    // 해당 노선만 필터
+    const filtered = list.filter(it => String(it.routeNo).replace(/\s/g,'') === stop.routeNo.replace(/\s/g,''));
+
+    if (filtered.length === 0) { el.innerHTML = '<div class="bus-loading">해당 노선 없음</div>'; return; }
+
+    const arrivals = filtered
+      .flatMap(it => [
+        { sec: it.arrivalSec1, prevSt: it.prevStationCnt1, plate: it.plateNo1 },
+        { sec: it.arrivalSec2, prevSt: it.prevStationCnt2, plate: it.plateNo2 },
+      ])
+      .filter(a => a.sec !== undefined && a.sec !== null && a.sec >= 0)
+      .sort((a,b) => a.sec - b.sec)
+      .slice(0,2);
+
+    if (arrivals.length === 0) { el.innerHTML = '<div class="bus-loading">대기 없음</div>'; return; }
+
+    el.innerHTML = arrivals.map(a => {
+      const stopsText = a.prevSt != null ? `<span class="stops">${a.prevSt}정류장 전</span>` : '';
+      return `<div class="bus-time">${secToText(a.sec)}${stopsText}</div>`;
+    }).join('');
+
+  } catch(e) {
+    el.innerHTML = '<div class="bus-error">오류</div>';
+  }
+}
+
+async function fetchAllBus() {
+  await Promise.all(BUS_STOPS.map(fetchBusStop));
+  const now = new Date();
+  const el = document.getElementById('bus-updated');
+  if (el) el.textContent = '버스 ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ' 업데이트';
+}
+
 async function keepAwake(){
   if('wakeLock' in navigator){try{let wl=await navigator.wakeLock.request('screen');document.addEventListener('visibilitychange',async()=>{if(document.visibilityState==='visible')wl=await navigator.wakeLock.request('screen');});}catch(e){}}
 }
 
-tick(); buildCalendar(); fetchWeather(); fetchDust(); keepAwake();
+tick(); buildCalendar(); fetchWeather(); fetchDust(); fetchAllBus(); keepAwake();
 
 /* ── 자정에 달력 자동 갱신 ── */
 function scheduleCalendarRefresh() {
@@ -443,6 +546,7 @@ function scheduleCalendarRefresh() {
 scheduleCalendarRefresh();
 setInterval(tick,1000);
 setInterval(()=>{fetchWeather();fetchDust();},10*60*1000);
+setInterval(fetchAllBus, 60*1000); // 버스 1분마다 갱신
 </script>
 </body>
 </html>
